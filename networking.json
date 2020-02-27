@@ -461,8 +461,8 @@
                     },
                     {
                         "IpProtocol": "tcp",
-                        "FromPort": "5000",
-                        "ToPort": "5000",
+                        "FromPort": "3001",
+                        "ToPort": "3001",
                         "CidrIp": "0.0.0.0/0"
                     }
                 ],
