@@ -1,6 +1,33 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Resources": {
+         "s3":  {
+            "Type" : "AWS::S3::Bucket",
+            "Properties" : {                
+                "AccessControl" : "Private",               
+                "BucketEncryption" : {
+                  "ServerSideEncryptionConfiguration": [
+                     {
+                       "ServerSideEncryptionByDefault": {
+                         "SSEAlgorithm": "AES256"
+                       }
+                     }
+                   ]
+                },
+                "BucketName" : {"Ref": "s3bucketname"},                
+                "LifecycleConfiguration" : {
+                  "Rules": [
+                     {
+                       "Id": "DeleteEverythingInTwoMonths",
+                       "Prefix": "",
+                       "Status": "Enabled",
+                       "ExpirationInDays": "60"
+                     }
+                   ]
+                }              
+               
+              }
+          },
         "VPC": {
             "Type": "AWS::EC2::VPC",
             "Properties": {
@@ -86,6 +113,7 @@
                 }
             }
         },
+       
         "InternetGateway": {
             "Type": "AWS::EC2::InternetGateway",
             "Properties": {
@@ -193,22 +221,38 @@
                 "KeyName": {
                     "Ref": "KeyName"
                 },
-                
-                "UserData": "",
+                "IamInstanceProfile":{"Ref":"EC2CSYE6225InstanceProfile"},
+                "UserData": {
+
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "\n",
+                            [
+                                "#!/bin/bash -ex", 
+                                "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1",                               
+                                "cd /home/ubuntu",
+                                "mkdir webapp",
+                                "chmod 777 webapp",
+                                "cd webapp", 
+                                "echo bucket='${s3}'  >> /home/ubuntu/.env",                                   
+                                "chmod 777 /home/ubuntu/.env"
+                            ]
+                        ]
+                    }
+                  
+                },
                 "Tags": [
                     {
                         "Key": "Name",
                         "Value": "ec2"
                     }
-                ],
-                "SubnetId": {
-                    "Ref": "PublicSubnet1"
-                },
-                "SecurityGroupIds": [
-                    {
-                        "Ref": "WebServerSecurityGroup"
-                    }
-                ],
+                ],              
+                "NetworkInterfaces": [ {
+                    "AssociatePublicIpAddress": "true",
+                    "DeviceIndex": "0",
+                    "GroupSet": [{ "Ref" : "applicationSecurityGroup" }],
+                    "SubnetId": { "Ref" : "PublicSubnet1" }
+                  } ],
                 "BlockDeviceMappings": [
                     {
                         "DeviceName": "/dev/sda1",
@@ -220,7 +264,7 @@
                     }
                 ]
             }
-        }, 
+        },   
         "RDSSubnetGroup":{
             "Type":"AWS::RDS::DBSubnetGroup",
             "Properties":{
@@ -253,7 +297,7 @@
                "MasterUsername":"dbuser",
                "MasterUserPassword":"csye6225password",
                "MultiAZ":false,
-               "DBInstanceIdentifier":"csye6225-spring2019",
+               "DBInstanceIdentifier":"csye6225-spring2020",
                "PubliclyAccessible":false,
                "Port":"3306",
                "DBSubnetGroupName":{
@@ -265,7 +309,7 @@
            [
                         {
                            "Fn::GetAtt":[
-                              "DBServerSecurityGroup",
+                              "databaseSecurityGroup",
                               "GroupId"
                            ]
                         }
@@ -284,8 +328,8 @@
                   }
                ]
             }
-         },
-         "DBServerSecurityGroup":{
+         },      
+         "databaseSecurityGroup":{
             "Type":"AWS::EC2::SecurityGroup",
             "Condition":"Is-EC2-VPC",
             "Properties":{
@@ -300,7 +344,7 @@
                      "FromPort":3306,
                      "ToPort":3306,
                      "SourceSecurityGroupId":{
-                        "Ref":"WebServerSecurityGroup"
+                        "Ref":"applicationSecurityGroup"
                      }
                   }
                ],
@@ -308,13 +352,57 @@
                   {
                      "Key":"Name",
                      "Value":{
-                        "Fn::Sub":"csye6225-DBSecurityGroup"
+                        "Fn::Sub":"csye6225-databaseSecurityGroup"
                      }
                   }
                ]
             }
-         },     
-        "WebServerSecurityGroup": {
+         }, 
+         "EC2CSYE6225Role":{
+            "Type":"AWS::IAM::Role",
+            "Properties": {
+                   "RoleName": "EC2CSYE6225Role",
+                   
+                   "AssumeRolePolicyDocument": {
+                       "Version": "2012-10-17",
+                       "Statement": [{
+                           "Effect": "Allow",
+                           "Principal": {
+                               "Service": ["ec2.amazonaws.com"]
+   
+                           },
+                           "Action": ["sts:AssumeRole"]
+                       }]
+                   },
+                   "Path": "/",
+                   "Policies": [{
+                       "PolicyName": "WebAppS3",
+                       "PolicyDocument": {
+                           "Version": "2012-10-17",
+                           "Statement": [{
+                            "Action": "s3:*",                                                                  
+                               
+                               "Effect": "Allow",
+                               "Resource": "*"
+                           }]
+                           
+                       }
+                   }]
+               }
+         },  
+         "EC2CSYE6225InstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+           
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "EC2CSYE6225Role"
+                    }
+                ]
+            }
+        },    
+        "applicationSecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "GroupName": "csye6225-webapp",
@@ -352,7 +440,7 @@
                     {
                         "Key": "Name",
                         "Value": {
-                            "Fn::Sub": "csye6225-WebAppSecurityGroup"
+                            "Fn::Sub": "csye6225-applicationSecurityGroup"
                         }
                     }
                 ]
@@ -360,6 +448,10 @@
         }
     },
     "Parameters": {
+        "s3bucketname":{
+            "Description": "The s3 name",
+            "Type": "String"
+        },
         "VPCNAME": {
             "Description": "The stack name",
             "Type": "String"
