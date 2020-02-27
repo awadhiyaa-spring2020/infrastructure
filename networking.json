@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Resources": {
-         "s3":  {
+         "S3Bucket":  {
             "Type" : "AWS::S3::Bucket",
             "Properties" : {                
                 "AccessControl" : "Private",               
@@ -13,8 +13,7 @@
                        }
                      }
                    ]
-                },
-                "BucketName" : {"Ref": "s3bucketname"},                
+                },                
                 "LifecycleConfiguration" : {
                   "Rules": [
                      {
@@ -223,23 +222,49 @@
                 },
                 "IamInstanceProfile":{"Ref":"EC2CSYE6225InstanceProfile"},
                 "UserData": {
-
                     "Fn::Base64": {
                         "Fn::Join": [
-                            "\n",
+                            "",
                             [
-                                "#!/bin/bash -ex", 
-                                "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1",                               
-                                "cd /home/ubuntu",
-                                "mkdir webapp",
-                                "chmod 777 webapp",
-                                "cd webapp", 
-                                "echo bucket='${s3}'  >> /home/ubuntu/.env",                                   
-                                "chmod 777 /home/ubuntu/.env"
+                                "#!/bin/bash \n",
+                                "sudo apt install unzip \n",
+                                "echo export host=",
+                                {
+                                    "Fn::GetAtt": [
+                                        "RDSInstance",
+                                        "Endpoint.Address"
+                                    ]
+                                },
+                                " >> /home/ubuntu/.env \n",
+                                "echo export DB_PORT=",
+                                {
+                                    "Fn::GetAtt": [
+                                        "RDSInstance",
+                                        "Endpoint.Port"
+                                    ]
+                                },
+                                " >> /home/ubuntu/.env \n", 
+                                "echo export user=dbuser",
+                                
+                                " >> /home/ubuntu/.env \n", 
+                                "echo export database=csye6225",
+                                
+                                " >> /home/ubuntu/.env \n", 
+                                "echo export DBpassword=",
+                                {
+                                    "Ref": "dbPassword"
+                                },
+                                " >> /home/ubuntu/.env \n",                                
+                                
+                                
+                                "echo export bucket=",
+                                {
+                                    "Ref": "S3Bucket"
+                                },
+                                " >> /home/ubuntu/.env \n"
                             ]
                         ]
                     }
-                  
                 },
                 "Tags": [
                     {
@@ -295,7 +320,7 @@
                "DBInstanceClass":"db.t3.micro",
                "Engine":"MySQL",
                "MasterUsername":"dbuser",
-               "MasterUserPassword":"csye6225password",
+               "MasterUserPassword": {"Ref": "dbPassword"},
                "MultiAZ":false,
                "DBInstanceIdentifier":"csye6225-spring2020",
                "PubliclyAccessible":false,
@@ -447,11 +472,7 @@
             }
         }
     },
-    "Parameters": {
-        "s3bucketname":{
-            "Description": "The s3 name",
-            "Type": "String"
-        },
+    "Parameters": {        
         "VPCNAME": {
             "Description": "The stack name",
             "Type": "String"
@@ -460,9 +481,12 @@
             "Description": "The stack name",
             "Type": "String"
         },
+        "dbPassword": {
+            "Type": "String"
+        }, 
         "ImageID": {
             "Type": "String"
-        },       
+        },        
         "CidrBlock1": {
             "Type": "String",
             "Default": "10.0.3.0/24",
