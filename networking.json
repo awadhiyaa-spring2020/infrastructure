@@ -247,7 +247,7 @@
                                 "echo export user=dbuser",
                                 
                                 " >> /home/ubuntu/.env \n", 
-                                "echo export database=csye6225",
+                                "echo export DBName=csye6225",
                                 
                                 " >> /home/ubuntu/.env \n", 
                                 "echo export DBpassword=",
@@ -405,7 +405,12 @@
                        "PolicyDocument": {
                            "Version": "2012-10-17",
                            "Statement": [{
-                            "Action": "s3:*",                                                                  
+                            "Action": [
+                                "s3:Get*",
+                                "s3:List*",
+                        "s3:Put*",
+                        "s3:Delete*"
+                            ],                                                                  
                                
                                "Effect": "Allow",
                                "Resource": "*"
