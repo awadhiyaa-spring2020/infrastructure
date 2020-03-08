@@ -228,7 +228,8 @@
                             [
                                 "#!/bin/bash \n",
                                 "sudo apt install unzip \n",
-                                "echo export host=",
+                                "mkdir /home/ubuntu/webapp",
+                                "echo host=",
                                 {
                                     "Fn::GetAtt": [
                                         "RDSInstance",
@@ -236,7 +237,7 @@
                                     ]
                                 },
                                 " >> /home/ubuntu/.env \n",
-                                "echo export DB_PORT=",
+                                "echo DB_PORT=",
                                 {
                                     "Fn::GetAtt": [
                                         "RDSInstance",
@@ -244,20 +245,20 @@
                                     ]
                                 },
                                 " >> /home/ubuntu/.env \n", 
-                                "echo export user=dbuser",
+                                "echo  user=dbuser",
                                 
                                 " >> /home/ubuntu/.env \n", 
-                                "echo export DBName=csye6225",
+                                "echo DBName=csye6225",
                                 
                                 " >> /home/ubuntu/.env \n", 
-                                "echo export DBpassword=",
+                                "echo DBpassword=",
                                 {
                                     "Ref": "dbPassword"
                                 },
                                 " >> /home/ubuntu/.env \n",                                
                                 
                                 
-                                "echo export bucket=",
+                                "echo bucket=",
                                 {
                                     "Ref": "S3Bucket"
                                 },
