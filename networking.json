@@ -227,7 +227,7 @@
                             "",
                             [
                                 "#!/bin/bash \n",
-                                "mkdir webapp",
+                                "mkdir /home/ubuntu/webapp",
                                 "sudo apt install unzip \n",
                                 "echo host=",
                                 {
