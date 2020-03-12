@@ -399,7 +399,7 @@
                 "Roles": [
                     {
                         "Ref": "EC2CSYE6225Role"
-                    }
+                    }                   
                 ]
             }
         },
@@ -490,7 +490,7 @@
         "EC2CSYE6225Role": {
             "Type": "AWS::IAM::Role",
             "DependsOn":[
-                "WebAppS3Policy"
+                "WebAppS3Policy"                
              ],
             "Properties": {
                 "RoleName": "EC2CSYE6225Role",
@@ -519,6 +519,12 @@
                 "ManagedPolicyArns": [
                     {
                         "Ref":"WebAppS3Policy"
+                    },
+                    {
+                        "Ref":"CirlceCICodeDeploy"
+                    },
+                    {
+                        "Ref":"CodeDeployEC2S3"
                     }
                 ]
             }
@@ -592,7 +598,7 @@
                                         {
                                             "Ref": "S3Bucket"
                                         },
-                                        ":",
+                                        ",",
                                         "arn:aws:s3:::",
                                         {
                                             "Ref": "S3Bucket"
@@ -751,6 +757,11 @@
                 "Users": [
                     {
                         "Ref": "circleci"
+                    }
+                ],
+                "Roles": [
+                    {
+                        "Ref": "CodeDeployEC2ServiceRole"
                     }
                 ]
             }
