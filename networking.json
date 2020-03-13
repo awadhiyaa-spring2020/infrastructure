@@ -590,14 +590,10 @@
                                 "s3:Delete*"
                             ],
                             "Effect": "Allow",
-                            "Resource": {
+                            "Resource": {               
                                 "Fn::Join": [
                                     "",
                                     [
-                                        "arn:aws:s3:::",
-                                        {
-                                            "Ref": "S3Bucket"
-                                        },                                        
                                         "arn:aws:s3:::",
                                         {
                                             "Ref": "S3Bucket"
@@ -605,6 +601,8 @@
                                         "/*"
                                     ]
                                 ]
+                            }
+                                
                             }
                         }
                     ]
