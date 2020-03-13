@@ -597,8 +597,7 @@
                                         "arn:aws:s3:::",
                                         {
                                             "Ref": "S3Bucket"
-                                        },
-                                        ",",
+                                        },                                        
                                         "arn:aws:s3:::",
                                         {
                                             "Ref": "S3Bucket"
