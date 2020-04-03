@@ -1,0 +1,177 @@
+{
+	"Resources":{
+		"MyQueue": {
+			"Properties": {
+			   "QueueName": "MyQueue",			   
+			   "ContentBasedDeduplication": false
+				},
+			"Type": "AWS::SQS::Queue"
+			}
+		 },
+		"SNSTopic": {
+		      "Type" : "AWS::SNS::Topic",
+		      "Properties" : {
+			"DisplayName" : "MySNSTopic",
+			"TopicName" : "SNSTopicResetPassword",
+			"Subscription": [
+				{
+				  "Endpoint": {
+				    "Fn::GetAtt": [ "LambdaFunction", "Arn" ]
+				  },
+				  "Protocol": "lambda"
+				}
+			      ]
+		      }
+            },
+           
+		"LambdaResourcePolicy": {
+		  "Type": "AWS::Lambda::Permission",
+		  "Properties": {
+		    "FunctionName" : { "Ref" : "LambdaFunction" },
+		    "Principal": "sns.amazonaws.com",
+		   "Action": 
+
+                "lambda:InvokeFunction"
+            ,
+		    "SourceArn" : { "Ref": "SNSTOPICARN" }
+		  }
+		},
+		"LambdaExecutionRole": {
+		  "Type": "AWS::IAM::Role",
+		  "Properties": {
+			"AssumeRolePolicyDocument": {
+			  "Version": "2012-10-17",
+			  "Statement": [
+				{
+				  "Effect": "Allow",
+				  "Principal": {
+					"Service": [
+					  "lambda.amazonaws.com"
+					]
+				  },
+				  "Action": [
+					"sts:AssumeRole"
+				  ]
+				}
+			  ]
+			},
+			"ManagedPolicyArns": [
+			  "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole", 
+			  "arn:aws:iam::aws:policy/AmazonSESFullAccess", 
+			  "arn:aws:iam::aws:policy/AmazonSNSFullAccess", 
+			  "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+				"arn:aws:iam::aws:policy/AWSLambdaFullAccess"
+			],
+			"RoleName": "LambdaExecutionRole"
+		  }
+		},
+		"LambdaFunction": {
+		  "Type": "AWS::Lambda::Function",
+		  "Properties": {
+			"Handler": "trialLambda::trialLambda.Function::myFunction",
+			"Role": { "Fn::GetAtt" : ["LambdaExecutionRole", "Arn"] },
+			"Code": {
+			  "S3Bucket": { "Ref" : "LAMBDABUCKET" },
+			  "S3Key": "csye6225-spring2020-lambda-636891496833632797.zip"
+			},
+			"Runtime": "dotnetcore2.1",
+			"FunctionName" : "csye6225-spring2020-lambda",
+			"MemorySize" : 128,
+			"Timeout": 180,
+			"Environment": {"Variables" : {
+           					 "DomainName" : { "Ref" : "DOMAINNAME" }
+          				} }
+			
+		  }
+        },
+        "myDynamoDB": {
+			"Type": "AWS::DynamoDB::Table",
+			"Properties": {
+				"TableName": "csye-6225",
+				"AttributeDefinitions":[
+					{
+						 "AttributeName":"Id",
+						 "AttributeType":"S"
+					},
+			{
+						 "AttributeName":"Email",
+						 "AttributeType":"S"
+					}
+			 ],
+			 "KeySchema":[ {
+						 "AttributeName":"Id",
+						 "KeyType":"HASH"
+					},{
+						 "AttributeName":"Email",
+						 "KeyType":"RANGE"
+					}
+			 ],
+				"ProvisionedThroughput": {
+					"ReadCapacityUnits": "5",
+					"WriteCapacityUnits": "5"
+				},
+				"TimeToLiveSpecification": {
+		  	 		"AttributeName" : "tokenTTL",
+					"Enabled": "true"
+				}
+			}
+        },
+        "SNSAccess": {
+			"Type": "AWS::IAM::ManagedPolicy",
+			"Properties": {
+			  "PolicyDocument": {
+				"Version": "2012-10-17",
+				"Statement": [
+				  {
+					"Action": [
+					  "sns:*"
+					],
+					"Effect": "Allow",
+					"Resource": "*"
+				  }
+				]
+			  },
+			  "ManagedPolicyName": "SNSAccess",
+			  "Roles": [{
+				"Ref": "CodeDeployEC2ServiceRole"
+			  }]
+			}
+		  },
+        "CodeDeployEC2ServiceRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "CodeDeployServiceRole",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
+                    "arn:aws:iam::aws:policy/AmazonSNSFullAccess"
+                ],
+                "RoleName": "CodeDeployEC2ServiceRole"
+            }
+        }
+	},
+	"Parameters": {
+	    "LAMBDABUCKET": {
+	      "Type": "String"
+	    },
+	    "SNSTOPICARN": {
+	      "Type": "String"
+	    },
+	    "DOMAINNAME": {
+	      "Type": "String"
+	    }
+	  }
+}
