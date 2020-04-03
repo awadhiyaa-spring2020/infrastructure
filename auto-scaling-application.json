@@ -633,7 +633,7 @@
                 "Statistic": "Average",
                 "Period": "60",
                 "EvaluationPeriods": "1",
-                "Threshold": "50",
+                "Threshold": "70",
                 "AlarmActions": [
                     {
                         "Ref": "WebServerScaleUpPolicy"
@@ -659,7 +659,7 @@
                 "Statistic": "Average",
                 "Period": "60",
                 "EvaluationPeriods": "1",
-                "Threshold": "20",
+                "Threshold": "30",
                 "AlarmActions": [
                     {
                         "Ref": "WebServerScaleDownPolicy"
@@ -1086,6 +1086,7 @@
                                 "sqs:*"
                             ],
                             "Effect": "Allow",
+                            "Principal": "*",
                             "Resource": "*"
                         }
                     ]
