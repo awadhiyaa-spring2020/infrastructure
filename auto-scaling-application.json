@@ -326,6 +326,16 @@
                 ]
             }
         },
+        "RDSDbParameterGroup": {
+            "Type": "AWS::RDS::DBParameterGroup",
+            "Properties": {
+                "Description": "CloudFormation Database Parameter Group",
+                "Family": "mysql5.7",
+                "Parameters": {
+                    "performance_schema": "1"
+                }
+            }
+         },  
         "RDSInstance": {
             "Type": "AWS::RDS::DBInstance",
             "Properties": {
@@ -334,6 +344,7 @@
                 "DBInstanceClass": "db.t3.micro",
                 "Engine": "MySQL",
                 "MasterUsername": "dbuser",
+                "StorageEncrypted" : true,
                 "MasterUserPassword": {
                     "Ref": "dbPassword"
                 },
@@ -344,6 +355,9 @@
                 "DBSubnetGroupName": {
                     "Ref": "RDSSubnetGroup"
                 },
+                "DBParameterGroupName":{
+                    "Ref": "RDSDbParameterGroup"
+                 },
                 "VPCSecurityGroups": {
                     "Fn::If": [
                         "Is-EC2-VPC",
@@ -471,23 +485,11 @@
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "GroupName": "csye6225-LoadBalancer-SecurityGroup",
-                "GroupDescription": "Enable HTTP access via port 80, SSH access via port 22, HTTPS access via port 443",
+                "GroupDescription": "Enable HTTPS access via port 443",
                 "VpcId": {
                     "Ref": "VPC"
                 },
-                "SecurityGroupIngress": [
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": "80",
-                        "ToPort": "80",
-                        "CidrIp": "0.0.0.0/0"
-                    },
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": "22",
-                        "ToPort": "22",
-                        "CidrIp": "0.0.0.0/0"
-                    },
+                "SecurityGroupIngress": [                    
                     {
                         "IpProtocol": "tcp",
                         "FromPort": "443",
